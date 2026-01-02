@@ -1,0 +1,72 @@
+ <!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Messagerie Privée</title>
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    #chat { display: none; }
+    #messages { border: 1px solid #ccc; height: 200px; overflow-y: scroll; padding: 10px; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+
+  <div id="login">
+    <h2>Entrez votre pseudo</h2>
+    <input id="pseudoInput" placeholder="Votre pseudo">
+    <button id="connectBtn">Se connecter</button>
+  </div>
+
+  <div id="chat">
+    <h3>Chat privé</h3>
+    <div id="messages"></div>
+    <input id="messageInput" placeholder="Votre message">
+    <button id="sendBtn">Envoyer</button>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+
+    const loginDiv = document.getElementById('login');
+    const chatDiv = document.getElementById('chat');
+    const pseudoInput = document.getElementById('pseudoInput');
+    const connectBtn = document.getElementById('connectBtn');
+    const messageInput = document.getElementById('messageInput');
+const sendBtn = document.getElementById('sendBtn');
+    const messages = document.getElementById('messages');
+
+    let pseudo = '';
+
+    connectBtn.addEventListener('click', () => {
+      pseudo = pseudoInput.value.trim();
+      if (pseudo) {
+        socket.emit('join', pseudo);
+        loginDiv.style.display = 'none';
+        chatDiv.style.display = 'block';
+      }
+    });
+
+    sendBtn.addEventListener('click', () => {
+      const msg = messageInput.value.trim();
+      if (msg) {
+        socket.emit('private message', { user: pseudo, message: msg });
+        messages.innerHTML += <p><strong>Moi:</strong> msg</p>;
+        messageInput.value = ”;
+      );
+
+    socket.on('private message', data => 
+      messages.innerHTML += <p><strong>{data.user}:</strong> ${data.message}</p>;
+    });
+
+    // Entrée pour valider pseudo ou message
+    pseudoInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') connectBtn.click();
+    });
+
+    messageInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') sendBtn.click();
+    });
+  </script>
+</body>
+</html>
