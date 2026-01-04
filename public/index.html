@@ -1,146 +1,59 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Hermès Messenger</title>
-  <style>
-    body {
-      background: #121212;
-      color: white;
-      font-family: sans-serif;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin: 0;
-      height: 100vh;
-    }
-
-    #login {
-      margin-top: 100px;
-    }
-
-    #chat-section {
-      display: none;
-      width: 90%;
-      max-width: 600px;
-      flex-direction: column;
-      height: 100%;
-    }
-
-    #user-list {
-      margin: 10px 0;
-    }
-
-    #messages {
-      flex: 1;
-      background: #1e1e1e;
-      border-radius: 10px;
-      padding: 10px;
-      overflow-y: auto;
-      margin-bottom: 10px;
-    }
-
-    .msg {
-      background: #333;
-      border-radius: 8px;
-      padding: 8px;
-      margin: 5px 0;
-      word-wrap: break-word;
-    }
-
-    #form {
-      display: flex;
-    }
-
-    #input {
-      flex: 1;
-      padding: 10px;
-      border-radius: 5px 0 0 5px;
-      border: none;
-    }
-
-    #send {
-      padding: 10px;
-background: #555;
-      color: white;
-      border: none;
-      border-radius: 0 5px 5px 0;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-
-  <div id="login">
-    <h2>Entrez votre pseudo</h2>
-    <input type="text" id="pseudo" placeholder="Pseudo" />
-    <button onclick="connecter()">Se connecter</button>
+  <!-- Écran de connexion -->
+  <div id="loginScreen">
+    <h2>Hermès Messenger</h2>
+    <input type="text" id="pseudoInput" placeholder="Entrez votre pseudo..." />
+    <button onclick="connect()">Se connecter</button>
   </div>
 
-  <div id="chat-section">
-    <h2>Connecté en tant que <span id="pseudo-affiche"></span></h2>
-    <label for="user-list">Choisir un destinataire :</label>
-    <select id="user-list"></select>
+  <!-- Interface principale du chat -->
+  <div id="chatApp" style="display: none;">
+    <header>
+      <h1>Hermès Messenger</h1>
+      <span id="userPseudo"></span>
+    </header>
 
-    <div id="messages"></div>
+    <div class="main">
+      <!-- Utilisateurs connectés -->
+      <aside id="userList">
+        <h3>Utilisateurs connectés</h3>
+        <ul id="users"></ul>
+      </aside>
 
-    <form id="form" onsubmit="envoyer(event)">
-      <input id="input" autocomplete="off" placeholder="Message..." />
-      <button id="send">Envoyer</button>
-    </form>
+      <!-- Messages de groupe -->
+      <section class="chat-section" id="groupChat">
+        <h3>Groupe</h3>
+        <div class="messages" id="groupMessages"></div>
+        <div class="input-area">
+<input type="text" id="groupInput" placeholder="Message groupe..." />
+          <button onclick="sendGroupMessage()">Envoyer</button>
+        </div>
+      </section>
+
+      <!-- Messages privés -->
+      <section class="chat-section" id="privateChat">
+        <h3>Privé</h3>
+        <select id="privateUser">
+          <option value="">Choisir un utilisateur</option>
+        </select>
+        <div class="messages" id="privateMessages"></div>
+        <div class="input-area">
+          <input type="text" id="privateInput" placeholder="Message privé..." />
+          <button onclick="sendPrivateMessage()">Envoyer</button>
+        </div>
+      </section>
+    </div>
   </div>
 
   <script src="/socket.io/socket.io.js"></script>
-  <script>
-    const socket = io();
-    let pseudo = "";
-    let destinataire = "";
-
-    function connecter() {
-      pseudo = document.getElementById("pseudo").value.trim();
-      if (pseudo) {
-        socket.emit("set pseudo", pseudo);
-        document.getElementById("login").style.display = "none";
-        document.getElementById("chat-section").style.display = "flex";
-        document.getElementById("pseudo-affiche").textContent = pseudo;
-      }
-    }
-
-    socket.on("user list", users => {
-const select = document.getElementById("user-list");
-      select.innerHTML = "";
-      users.forEach(user => {
-        if (user !== pseudo) {
-          const option = document.createElement("option");
-          option.value = user;
-          option.textContent = user;
-          select.appendChild(option);
-        }
-      });
-      destinataire = select.value;
-      select.onchange = () => destinataire = select.value;
-    });
-
-    function envoyer(e) {
-      e.preventDefault();
-      const msg = document.getElementById("input").value.trim();
-      if (msg && destinataire) {
-        socket.emit("private message", { to: destinataire, message: msg });
-        ajouterMessage("Moi → " + destinataire + " : " + msg);
-        document.getElementById("input").value = "";
-      }
-    }
-
-    socket.on("private message", data => {
-      ajouterMessage(data.from + " → Moi : " + data.message);
-    });
-
-    function ajouterMessage(text) {
-      const div = document.createElement("div");
-      div.className = "msg";
-      div.textContent = text;
-      document.getElementById("messages").appendChild(div);
-    }
-  </script>
-
+  <script src="script.js"></script>
 </body>
 </html>
