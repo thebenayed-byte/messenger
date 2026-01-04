@@ -1,54 +1,57 @@
 const express = require('express');
 const http = require('http');
-const { Server } = require('socket.io');
-const path = require('path');
+const socketIo = require('socket.io');
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = socketIo(server);
 
-const users = {}; // socket.id => pseudo
-const pseudos = {}; // pseudo => socket.id
+const users = new Map(); // socket.id -> pseudo
 
-app.use(express.static(__dirname + '/public'));
-
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public/index.html'));
-});
+app.use(express.static('public')); // le dossier contenant index.html
 
 io.on('connection', (socket) => {
-  console.log('Nouvelle connexion');
+  console.log('Nouvelle connexion :', socket.id);
 
-  socket.on('set pseudo', (pseudo) => {
-    users[socket.id] = pseudo;
-    pseudos[pseudo] = socket.id;
-    updateUserList();
+  // Quand un utilisateur définit son pseudo
+  socket.on('setPseudo', (pseudo) => {
+    users.set(socket.id, pseudo);
+    updateUsers();
   });
 
-  socket.on('private message', ({ to, message }) => {
-    const toSocketId = pseudos[to];
-    const fromPseudo = users[socket.id];
-    if (toSocketId) {
-      io.to(toSocketId).emit('private message', {
-        from: fromPseudo,
-        message: message
+  // Message de groupe
+  socket.on('groupMessage', (message) => {
+    const pseudo = users.get(socket.id) || 'Anonyme';
+    io.emit('groupMessage', { pseudo, message, time: new Date().toLocaleTimeString() });
+  });
+
+  // Message privé
+  socket.on('privateMessage', ({ to, message }) => {
+    const from = users.get(socket.id);
+    const destSocketId = [...users.entries()].find(([id, name]) => name === to)?.[0];
+    if (from && destSocketId) {
+      io.to(destSocketId).emit('privateMessage', {
+        from,
+        message,
+        time: new Date().toLocaleTimeString()
       });
     }
   });
 
-  socket.on('disconnect', () => {
-    const pseudo = users[socket.id];
-    delete pseudos[pseudo];
-delete users[socket.id];
-    updateUserList();
+  // Déconnexion
+socket.on('disconnect', () => {
+    users.delete(socket.id);
+    updateUsers();
   });
 
-  function updateUserList() {
-    const allPseudos = Object.values(users);
-    io.emit('user list', allPseudos);
+  // Met à jour la liste des utilisateurs pour tous
+  function updateUsers() {
+    const list = [...users.values()];
+    io.emit('userList', list);
   }
 });
 
-server.listen(3000, () => {
-  console.log('Serveur lancé sur http://localhost:3000');
+const PORT = 3000;
+server.listen(PORT, () => {
+  console.log('Serveur lancé sur http://localhost:${PORT}');
 });
